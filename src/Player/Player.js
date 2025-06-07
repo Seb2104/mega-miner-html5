@@ -387,35 +387,44 @@ class Player extends createjs.Sprite {
             // END TEMPORARY HTML UPDATING
 
             // Check for movement completion
-            if (
-                (this.facingDirection == Player.Direction.UP && this.y <= this.targetPos.y) ||
-                (this.facingDirection == Player.Direction.DOWN && this.y >= this.targetPos.y) ||
-                (this.facingDirection == Player.Direction.LEFT && this.x <= this.targetPos.x) ||
-                (this.facingDirection == Player.Direction.RIGHT && this.x >= this.targetPos.x)
-            ) {
-                // Snap to position, just in case the previous code didn't for some weird obscure reason
-                this.x = this.targetPos.x;
-                this.y = this.targetPos.y;
+if (
+    (this.facingDirection == Player.Direction.UP && this.y <= this.targetPos.y) ||
+    (this.facingDirection == Player.Direction.DOWN && this.y >= this.targetPos.y) ||
+    (this.facingDirection == Player.Direction.LEFT && this.x <= this.targetPos.x) ||
+    (this.facingDirection == Player.Direction.RIGHT && this.x >= this.targetPos.x)
+) {
+    // Snap to position, just in case the previous code didn't for some weird obscure reason
+    this.x = this.targetPos.x;
+    this.y = this.targetPos.y;
 
-                // Potentially stop moving since we arrived at our position
-                this.moving = false;
-                this.isStopping = true;
+    // Potentially stop moving since we arrived at our position
+    this.moving = false;
+    this.isStopping = true;
 
-                // Fetch tile and maptile from the position we moved to, and mine the maptile
-                this.tile = this.grid.getTilePositionFromPixelPosition(this.x, this.y);
-                const maptile = this.map.fg_tiles[this.tile.toString()];
-                if (maptile) {
-                    this.hold.addMapTile(maptile);
-                    this.map.tiles.removeChild(maptile);
-                    delete this.map.fg_tiles[this.tile.toString()];
-                    this.map.tiles.updateCache();
-                    this.dispatchEvent(new CustomEvent("tiledestroy", { detail: this.tile }));
-                    this.minetile = null;
-                }
-
-                // Dispatch tilemove
-                this.dispatchEvent(new CustomEvent("tilemove", { detail: this.tile }));
-            }
+    // Fetch tile and maptile from the position we moved to
+    this.tile = this.grid.getTilePositionFromPixelPosition(this.x, this.y);
+    const maptile = this.map.fg_tiles[this.tile.toString()];
+    
+    // Check if this is a building (interactable tile)
+    if (maptile && maptile.properties.interactable) {
+        // Don't mine buildings, just dispatch the move event for interaction
+        this.dispatchEvent(new CustomEvent("tilemove", { detail: this.tile }));
+    } else if (maptile && !maptile.properties.interactable) {
+        // Regular mining behavior for non-building tiles
+        this.hold.addMapTile(maptile);
+        this.map.tiles.removeChild(maptile);
+        delete this.map.fg_tiles[this.tile.toString()];
+        this.map.tiles.updateCache();
+        this.dispatchEvent(new CustomEvent("tiledestroy", { detail: this.tile }));
+        this.minetile = null;
+        
+        // Dispatch tilemove for regular tiles too
+        this.dispatchEvent(new CustomEvent("tilemove", { detail: this.tile }));
+    } else {
+        // No tile at this position, just dispatch move event
+        this.dispatchEvent(new CustomEvent("tilemove", { detail: this.tile }));
+    }
+}
 
             // Perform UI updates on player modules
             this.drill.updatePos();

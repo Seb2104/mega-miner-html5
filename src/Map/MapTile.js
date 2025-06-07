@@ -47,6 +47,7 @@ class MapTile extends createjs.Sprite {
         );
     }
 }
+
 /**
  * Determines the different tile types.
  * Used for fetching the image from the loader.
@@ -57,7 +58,13 @@ MapTile.Type = {
     DIRT: 2,
     GRASS: 1,
     COAL: 6,
-    BG_GRASS: 3
+    BG_GRASS: 3,
+    // Buildings (surface structures)
+    SHOP: 10,
+    SAVE_STATION: 11,
+    SELLING_POST: 12,
+    FUEL_STATION: 13,
+    TELEPORTER: 14
 };
 
 /**
@@ -68,6 +75,7 @@ MapTile.Type = {
  * @property {MapTile.Type} type The type of tile this is.
  * @property {number} thickness A percentage of the default player movement speed. See {@link Player#defaultSpeed}.
  * @property {number} value The value of this tile.
+ * @property {boolean} [interactable] Whether this tile can be interacted with.
  * @see Player#defaultSpeed
  */
 

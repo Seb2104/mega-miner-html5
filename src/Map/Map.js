@@ -1,3 +1,4 @@
+// src/Map/Map.js (Updated with buildings)
 /** @typedef {import("./MapTile.js")} MapTile */
 const Tile = require("../Grid/Tile.js");
 const MapTile = require("./MapTile.js"); // eslint-disable-line
@@ -7,6 +8,13 @@ const seedrandom = require("seedrandom");
 const Grass = require("./Tiles/Grass.js");
 const Dirt = require("./Tiles/Dirt.js");
 const Coal = require("./Tiles/Coal.js");
+
+// Buildings
+const Shop = require("./Tiles/Shop.js");
+const SaveStation = require("./Tiles/SaveStation.js");
+const SellingPost = require("./Tiles/SellingPost.js");
+const FuelStation = require("./Tiles/FuelStation.js");
+const Teleporter = require("./Tiles/Teleporter.js");
 
 /**
  * Handles and creates all tiles relating to the map itself. Also handles map generation among various other map-related things.
@@ -59,6 +67,18 @@ class GameMap {
          * @type {number}
          */
         this.seed = 0;
+
+        /**
+         * Building positions on the surface
+         * @type {Array<{type: Function, x: number}>}
+         */
+        this.surfaceBuildings = [
+            { type: Shop, x: 5 },
+            { type: SaveStation, x: 10 },
+            { type: SellingPost, x: 15 },
+            { type: FuelStation, x: 25 },
+            { type: Teleporter, x: 30 }
+        ];
     }
 
     /**
@@ -87,13 +107,52 @@ class GameMap {
         this.bg_tiles.push(bggrass);
         this.game.addChild(bggrass);
 
-        // Generate First Grass Layer
+        // Generate Surface (Grass + Buildings)
         for (let i = 0; i < this.grid.widthGU; i++) {
             const t = new Tile(i, this.horizonLineGU);
-            const mt = new Grass(this, t);
-            mt.make();
-            this.tiles.addChild(mt);
-            this.fg_tiles[t.toString()] = mt;
+            
+            // Check if this position should have a building
+            const building = this.surfaceBuildings.find(b => b.x === i);
+            
+            if (building && i < this.grid.widthGU) {
+                // Place building instead of grass
+                const buildingTile = new building.type(this, t);
+                buildingTile.make();
+                this.tiles.addChild(buildingTile);
+                this.fg_tiles[t.toString()] = buildingTile;
+                
+                // Add a visual indicator (colored rectangle) since we don't have building sprites
+                const indicator = new createjs.Shape();
+                const color = buildingTile.properties.color;
+                indicator.graphics.beginFill(color).drawRect(
+                    i * this.grid.tileSize + 5,
+                    this.horizonLineGU * this.grid.tileSize + 5,
+                    this.grid.tileSize - 10,
+                    this.grid.tileSize - 10
+                );
+                indicator.graphics.beginStroke("#ffffff").setStrokeStyle(2).drawRect(
+                    i * this.grid.tileSize + 5,
+                    this.horizonLineGU * this.grid.tileSize + 5,
+                    this.grid.tileSize - 10,
+                    this.grid.tileSize - 10
+                );
+                this.game.addChild(indicator);
+                
+                // Add building label
+                const label = new createjs.Text(buildingTile.properties.name, "10px Arial", "#ffffff");
+                label.textAlign = "center";
+                label.x = i * this.grid.tileSize + this.grid.tileSize / 2;
+                label.y = this.horizonLineGU * this.grid.tileSize - 15;
+                label.outline = 2;
+                this.game.addChild(label);
+                
+            } else {
+                // Place regular grass
+                const mt = new Grass(this, t);
+                mt.make();
+                this.tiles.addChild(mt);
+                this.fg_tiles[t.toString()] = mt;
+            }
         }
 
         // Generate Dirt

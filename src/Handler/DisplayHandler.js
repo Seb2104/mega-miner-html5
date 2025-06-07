@@ -1,8 +1,10 @@
+// src/Handler/DisplayHandler.js (Updated)
 const Grid = require("../Grid/Grid.js");
 const Player = require("../Player/Player.js");
 const Camera = require("../Camera.js");
 const GameMap = require("../Map/Map.js");
 const FOWHandler = require("./FOWHandler.js");
+const BuildingHandler = require("./BuildingHandler.js");
 
 /**
  * Manages and handles all sprites on the screen.
@@ -29,6 +31,12 @@ class DisplayHandler {
          */
         this.floatingTexts = [];
 
+        /**
+         * Handles building interactions
+         * @type {BuildingHandler}
+         */
+        this.buildingHandler = new BuildingHandler(this.game);
+
         createjs.Ticker.addEventListener("tick", this.tick.bind(this));
     }
 
@@ -40,10 +48,57 @@ class DisplayHandler {
         // Initiate Player & Camera
         this.player = new Player(this.game);
         this.camera = new Camera(this.game);
+        
+        // Connect building handler to player
+        this.buildingHandler.setPlayer(this.player);
+        
         this.relayer();
 
         // Initiate Fog-Of-War
         this.fow = new FOWHandler(this.game);
+
+        // Add instructions for buildings
+        this.showBuildingInstructions();
+    }
+
+    /**
+     * Shows instructions about buildings when game starts
+     */
+    showBuildingInstructions() {
+        const instructions = document.createElement('div');
+        instructions.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            max-width: 250px;
+            z-index: 50;
+        `;
+        
+        instructions.innerHTML = `
+            <h4 style="margin: 0 0 10px 0; color: #f39c12;">Surface Buildings:</h4>
+            <div style="color: #4CAF50;">■ Shop - Buy upgrades</div>
+            <div style="color: #2196F3;">■ Save Station - Save game</div>
+            <div style="color: #FF9800;">■ Selling Post - Sell resources</div>
+            <div style="color: #F44336;">■ Fuel Station - Refuel</div>
+            <div style="color: #9C27B0;">■ Teleporter - Fast travel</div>
+            <br>
+            <small>Walk over buildings to interact!</small>
+        `;
+
+        document.body.appendChild(instructions);
+
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            if (instructions.parentNode) {
+                document.body.removeChild(instructions);
+            }
+        }, 10000);
     }
 
     fade(out, callback) {
